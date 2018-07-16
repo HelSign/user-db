@@ -34,17 +34,46 @@ public class UserDbApplicationTests {
 
     @Test
     public void createEntity() throws Exception {
-        mockMvc.perform(post("/persons")//.header("Content-Type","application/json")
+        mockMvc.perform(post("/persons")
                 .content("{\"firstName\":\"Teddy\",\"lastName\":\"Bear\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", containsString("persons/")));
     }
 
     @Test
-    public void shouldReturnRepositoryIndex() throws Exception {
+    public void returnRepositoryIndex() throws Exception {
+        mockMvc.perform(get("/"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$._links.persons").exists());
+    }
 
-        mockMvc.perform(get("/")).andDo(print()).andExpect(status().isOk()).andExpect(
-                jsonPath("$._links.persons").exists());
+    @Test
+    public void updateEntity() throws Exception {
+        MvcResult mvcResult = mockMvc.perform(post("/persons")
+                .content("{\"firstName\":\"Teddy\",\"lastName\":\"Bear\"}"))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String location = mvcResult.getResponse().getHeader("Location");
+        mockMvc.perform(put(location).content("{\"firstName\":\"Teddy\",\"lastName\":\"Rabbit\"}"))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get(location)).andDo(print())
+                .andExpect(jsonPath("$.firstName").value("Teddy"))
+                .andExpect(jsonPath("$.lastName").value("Rabbit"));
+    }
+
+    @Test
+    public void returnEntity() throws Exception {
+        MvcResult mvcResult = mockMvc.perform(post("/persons")
+                .content("{\"firstName\":\"Teddy\",\"lastName\":\"Rabbit\"}"))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String location = mvcResult.getResponse().getHeader("Location");
+        mockMvc.perform(get(location)).andDo(print())
+                .andExpect(jsonPath("$.firstName").value("Teddy"))
+                .andExpect(jsonPath("$.lastName").value("Rabbit"));
     }
 
 }
